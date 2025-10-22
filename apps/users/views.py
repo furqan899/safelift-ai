@@ -1,57 +1,13 @@
-from rest_framework import status, viewsets, permissions
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema
 from .models import User
-from .serializers import AdminLoginSerializer, UserSerializer
+from .serializers import UserSerializer
 
 User = get_user_model()
-
-
-class AdminLoginView(APIView):
-    """
-    Admin login view that validates admin credentials and returns JWT tokens.
-    """
-    permission_classes = [AllowAny]
-
-    @extend_schema(
-        summary="Admin Login",
-        description="Authenticate admin user and receive JWT tokens",
-        request=AdminLoginSerializer,
-        responses={200: AdminLoginSerializer}
-    )
-    def post(self, request):
-        """Handle admin login."""
-        serializer = AdminLoginSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-
-            # Generate tokens
-            refresh = RefreshToken.for_user(user)
-            tokens = {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }
-
-            # Add user info to response
-            response_data = {
-                'message': 'Login successful',
-                'user': {
-                    'id': user.id,
-                    'username': user.username,
-                    'role': user.role,
-                    'is_admin': user.is_admin,
-                },
-                'tokens': tokens
-            }
-
-            return Response(response_data, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserListCreateView(APIView):
@@ -210,38 +166,3 @@ class UserDetailView(APIView):
 
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@extend_schema(
-    summary="Logout",
-    description="Logout user and invalidate tokens",
-    responses={200: {"type": "object", "properties": {"message": {"type": "string"}}}}
-)
-class LogoutView(APIView):
-    """
-    Logout view.
-    """
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        """Logout user."""
-        return Response({'message': 'Successfully logged out'})
-
-
-@extend_schema(
-    summary="Health Check",
-    description="Check if the API is healthy and running",
-    responses={200: {"type": "object", "properties": {"status": {"type": "string"}, "user": {"type": "string"}}}}
-)
-class HealthCheckView(APIView):
-    """
-    Simple health check endpoint.
-    """
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        """Return health status."""
-        return Response({
-            'status': 'healthy',
-            'user': request.user.username if request.user.is_authenticated else None
-        })

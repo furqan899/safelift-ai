@@ -1,46 +1,5 @@
 from rest_framework import serializers
-from django.contrib.auth import authenticate
 from .models import User
-
-
-class AdminLoginSerializer(serializers.Serializer):
-    """
-    Serializer for admin login credentials.
-    """
-    username = serializers.CharField(required=True)
-    password = serializers.CharField(
-        required=True,
-        write_only=True,
-        style={'input_type': 'password'}
-    )
-
-    def validate(self, attrs):
-        """Validate admin credentials."""
-        username = attrs.get('username')
-        password = attrs.get('password')
-
-        if username and password:
-            # Authenticate user
-            user = authenticate(username=username, password=password)
-            if user:
-                if not user.is_active:
-                    raise serializers.ValidationError(
-                        "User account is disabled."
-                    )
-                if not user.is_admin:
-                    raise serializers.ValidationError(
-                        "Access denied. Admin privileges required."
-                    )
-                attrs['user'] = user
-                return attrs
-            else:
-                raise serializers.ValidationError(
-                    "Invalid credentials."
-                )
-        else:
-            raise serializers.ValidationError(
-                "Username and password are required."
-            )
 
 
 class UserSerializer(serializers.ModelSerializer):
