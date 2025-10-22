@@ -57,27 +57,27 @@ class DashboardMetricsService:
             yesterday_metric = DashboardMetricsService.update_daily_metrics(yesterday)
         
         return {
-            'active_conversations': DashboardMetricsService._calculate_metric_with_change(
+            "active_conversations": DashboardMetricsService._calculate_metric_with_change(
                 today_metric.active_conversations,
                 yesterday_metric.active_conversations,
-                'yesterday'
+                "yesterday"
             ),
-            'total_users': DashboardMetricsService._calculate_metric_with_change(
+            "total_users": DashboardMetricsService._calculate_metric_with_change(
                 today_metric.total_users,
                 yesterday_metric.total_users,
-                'yesterday'
+                "yesterday"
             ),
-            'resolution_rate': DashboardMetricsService._calculate_resolution_rate(
+            "resolution_rate": DashboardMetricsService._calculate_resolution_rate(
                 today, 
                 today - timedelta(days=7)
             ),
-            'escalated_cases': DashboardMetricsService._calculate_metric_with_change(
+            "escalated_cases": DashboardMetricsService._calculate_metric_with_change(
                 today_metric.escalated_cases,
                 yesterday_metric.escalated_cases,
-                'yesterday',
+                "yesterday",
                 inverse=True
             ),
-            'response_time': DashboardMetricsService._get_response_time_metrics(today)
+            "response_time": DashboardMetricsService._get_response_time_metrics(today)
         }
     
     @staticmethod
@@ -95,21 +95,21 @@ class DashboardMetricsService:
         
         distributions = LanguageDistribution.objects.filter(
             date__gte=start_date
-        ).values('language', 'language_name').annotate(
+        ).values("language", "language_name").annotate(
             total_count=Sum('conversation_count')
         ).order_by('-total_count')
         
-        total_conversations = sum(d['total_count'] for d in distributions)
+        total_conversations = sum(d["total_count"] for d in distributions)
         
         if total_conversations == 0:
             return []
         
         return [
             {
-                'language': dist['language'],
-                'language_name': dist['language_name'],
-                'count': dist['total_count'],
-                'percentage': round((dist['total_count'] / total_conversations) * 100, 1)
+                "language": dist["language"],
+                "language_name": dist["language_name"],
+                "count": dist["total_count"],
+                "percentage": round((dist["total_count"] / total_conversations) * 100, 1)
             }
             for dist in distributions
         ]
@@ -124,22 +124,22 @@ class DashboardMetricsService:
         """
         return [
             {
-                'title': 'Manage Knowledge Base',
-                'description': 'Add or edit AI responses',
-                'action': 'knowledge_base',
-                'icon': 'database'
+                "title": "Manage Knowledge Base",
+                "description": "Add or edit AI responses",
+                "action": "knowledge_base",
+                "icon": "database"
             },
             {
-                'title': 'View Recent Logs',
-                'description': 'Review conversation history',
-                'action': 'conversation_logs',
-                'icon': 'logs'
+                "title": "View Recent Logs",
+                "description": "Review conversation history",
+                "action": "conversation_logs",
+                "icon": "logs"
             },
             {
-                'title': 'Export Reports',
-                'description': 'Download analytics data',
-                'action': 'export_reports',
-                'icon': 'download'
+                "title": "Export Reports",
+                "description": "Download analytics data",
+                "action": "export_reports",
+                "icon": "download"
             }
         ]
     
@@ -172,32 +172,35 @@ class DashboardMetricsService:
             
             # Calculate conversation metrics using aggregation
             conversation_stats = conversations.aggregate(
-                total=Count('id'),
-                active=Count('id', filter=Q(status=ConversationHistory.Status.ACTIVE)),
-                resolved=Count('id', filter=Q(status=ConversationHistory.Status.RESOLVED)),
-                escalated=Count('id', filter=Q(is_escalated=True)),
-                avg_response=Avg('response_time'),
-                min_response=Min('response_time'),
-                max_response=Max('response_time')
+                total=Count("id"),
+                active=Count("id", filter=Q(status=ConversationHistory.Status.ACTIVE)),
+                resolved=Count("id", filter=Q(status=ConversationHistory.Status.RESOLVED)),
+                escalated=Count("id", filter=Q(is_escalated=True)),
+                avg_response=Avg("response_time"),
+                min_response=Min("response_time"),
+                max_response=Max("response_time")
             )
             
             # Update conversation metrics
-            metric.total_conversations = conversation_stats['total'] or 0
-            metric.active_conversations = conversation_stats['active'] or 0
-            metric.resolved_conversations = conversation_stats['resolved'] or 0
-            metric.escalated_cases = conversation_stats['escalated'] or 0
+            metric.total_conversations = conversation_stats["total"] or 0
+            metric.active_conversations = conversation_stats["active"] or 0
+            metric.resolved_conversations = conversation_stats["resolved"] or 0
+            metric.escalated_cases = conversation_stats["escalated"] or 0
             
             # Calculate pending review (escalated but not resolved)
             metric.pending_review = conversations.filter(
                 is_escalated=True,
-                status__in=[ConversationHistory.Status.PENDING, ConversationHistory.Status.ESCALATED]
+                status__in=[
+                    ConversationHistory.Status.PENDING,
+                    ConversationHistory.Status.ESCALATED,
+                ]
             ).count()
             
             # Update response time metrics (convert milliseconds to seconds)
-            if conversation_stats['avg_response']:
-                metric.avg_response_time = round(conversation_stats['avg_response'] / 1000, 2)
-                metric.fastest_response_time = round(conversation_stats['min_response'] / 1000, 2)
-                metric.slowest_response_time = round(conversation_stats['max_response'] / 1000, 2)
+            if conversation_stats["avg_response"]:
+                metric.avg_response_time = round(conversation_stats["avg_response"] / 1000, 2)
+                metric.fastest_response_time = round(conversation_stats["min_response"] / 1000, 2)
+                metric.slowest_response_time = round(conversation_stats["max_response"] / 1000, 2)
             else:
                 metric.avg_response_time = 0.0
                 metric.fastest_response_time = 0.0
@@ -206,10 +209,10 @@ class DashboardMetricsService:
             # Calculate unique users (users who had conversations on this date)
             metric.total_users = conversations.filter(
                 user__isnull=False
-            ).values('user').distinct().count()
+            ).values("user").distinct().count()
             
             # Calculate unique visitors (unique session IDs)
-            metric.unique_visitors = conversations.values('session_id').distinct().count()
+            metric.unique_visitors = conversations.values("session_id").distinct().count()
             
             metric.save()
             
@@ -243,13 +246,13 @@ class DashboardMetricsService:
             # Get language distribution from conversations
             language_stats = ConversationHistory.objects.filter(
                 created_at__date=date
-            ).values('language').annotate(
+            ).values("language").annotate(
                 count=Count('id')
             ).order_by('-count')
             
             # Update or create language distribution records
             for lang_stat in language_stats:
-                language_code = lang_stat['language']
+                language_code = lang_stat["language"]
                 language_name = dict(ConversationHistory.Language.choices).get(
                     language_code,
                     language_code.upper()
@@ -259,17 +262,17 @@ class DashboardMetricsService:
                     date=date,
                     language=language_code,
                     defaults={
-                        'language_name': language_name,
-                        'conversation_count': lang_stat['count']
-                    }
+                        "language_name": language_name,
+                        "conversation_count": lang_stat["count"]
+                    },
                 )
-            
+
             logger.info(f"Successfully updated language distribution for {date}")
-            
+
         except Exception as e:
             logger.error(f"Failed to update language distribution for {date}: {str(e)}")
             raise
-    
+
     # Private helper methods
     
     @staticmethod
@@ -309,11 +312,11 @@ class DashboardMetricsService:
             is_positive = not is_positive
         
         return {
-            'value': current,
-            'change': abs(change_percentage),
-            'is_increase': change_percentage > 0,
-            'is_positive': is_positive,
-            'comparison': comparison_period
+            "value": current,
+            "change": abs(change_percentage),
+            "is_increase": change_percentage > 0,
+            "is_positive": is_positive,
+            "comparison": comparison_period
         }
     
     @staticmethod
@@ -355,27 +358,27 @@ class DashboardMetricsService:
         
         # Calculate averages using aggregate
         current_week_avg = current_week_metrics.aggregate(
-            total_conv=Sum('total_conversations'),
-            resolved_conv=Sum('resolved_conversations')
+            total_conv=Sum("total_conversations"),
+            resolved_conv=Sum("resolved_conversations")
         )
         
         last_week_avg = last_week_metrics.aggregate(
-            total_conv=Sum('total_conversations'),
-            resolved_conv=Sum('resolved_conversations')
+            total_conv=Sum("total_conversations"),
+            resolved_conv=Sum("resolved_conversations")
         )
         
         # Calculate resolution rates
-        if current_week_avg['total_conv'] and current_week_avg['total_conv'] > 0:
+        if current_week_avg["total_conv"] and current_week_avg["total_conv"] > 0:
             current_rate = round(
-                (current_week_avg['resolved_conv'] / current_week_avg['total_conv']) * 100,
+                (current_week_avg["resolved_conv"] / current_week_avg["total_conv"]) * 100,
                 1
             )
         else:
             current_rate = 0.0
         
-        if last_week_avg['total_conv'] and last_week_avg['total_conv'] > 0:
+        if last_week_avg["total_conv"] and last_week_avg["total_conv"] > 0:
             comparison_rate = round(
-                (last_week_avg['resolved_conv'] / last_week_avg['total_conv']) * 100,
+                (last_week_avg["resolved_conv"] / last_week_avg["total_conv"]) * 100,
                 1
             )
         else:
@@ -384,12 +387,12 @@ class DashboardMetricsService:
         change = round(current_rate - comparison_rate, 1)
         
         return {
-            'value': current_rate,
-            'change': abs(change),
-            'is_increase': change > 0,
-            'is_positive': change > 0,
-            'comparison': 'last week',
-            'previous_value': comparison_rate
+            "value": current_rate,
+            "change": abs(change),
+            "is_increase": change > 0,
+            "is_positive": change > 0,
+            "comparison": "last week",
+            "previous_value": comparison_rate
         }
     
     @staticmethod
@@ -406,12 +409,12 @@ class DashboardMetricsService:
         )
         
         return {
-            'average': current_metric.avg_response_time,
-            'fastest': current_metric.fastest_response_time,
-            'slowest': current_metric.slowest_response_time,
-            'change': abs(change),
-            'is_increase': change > 0,
-            'is_positive': change < 0,  # Lower response time is better
-            'comparison': 'last week'
+            "average": current_metric.avg_response_time,
+            "fastest": current_metric.fastest_response_time,
+            "slowest": current_metric.slowest_response_time,
+            "change": abs(change),
+            "is_increase": change > 0,
+            "is_positive": change < 0,  # Lower response time is better
+            "comparison": "last week"
         }
 

@@ -9,7 +9,7 @@ venv/
 
 # SQLite
 *.sqlite3
-
+.env
 # Django
 *.log
 local_settings.py

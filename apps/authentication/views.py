@@ -31,9 +31,9 @@ class LoginView(APIView):
                 description="Login successful"
             ),
             400: OpenApiResponse(description="Invalid credentials"),
-            403: OpenApiResponse(description="Access denied")
+            403: OpenApiResponse(description="Access denied"),
         },
-        tags=['Authentication']
+        tags=["Authentication"],
     )
     def post(self, request):
         """
@@ -75,7 +75,7 @@ class LogoutView(APIView):
                 description="Logout successful"
             )
         },
-        tags=['Authentication']
+        tags=["Authentication"],
     )
     def post(self, request):
         """
@@ -84,31 +84,49 @@ class LogoutView(APIView):
         Returns:
             Response confirming logout
         """
-        return Response(
-            {'message': 'Successfully logged out'},
-            status=status.HTTP_200_OK
-        )
+        serializer = LogoutSerializer({"message": "Successfully logged out"})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class HealthCheckView(APIView):
+class ReadinessProbeView(APIView):
     """
-    Simple health check endpoint for monitoring.
+    Readiness probe endpoint for monitoring, requires authentication.
     """
     
     permission_classes = [IsAuthenticated]
     
     @extend_schema(
-        summary="Health Check",
-        description="Check API health and authentication status",
+        summary="Readiness Probe",
+        description="Check API readiness including auth status",
         responses={
-            200: OpenApiResponse(description="API is healthy")
+            200: OpenApiResponse(description="API is ready")
         },
-        tags=['System']
+        tags=["System"],
     )
     def get(self, request):
-        """Return health status and current user."""
+        """Return readiness status and current user."""
         return Response({
-            'status': 'healthy',
-            'user': request.user.username if request.user.is_authenticated else None,
-            'is_admin': request.user.is_admin if request.user.is_authenticated else False
+            "status": "ready",
+            "user": request.user.username if request.user.is_authenticated else None,
+            "is_admin": request.user.is_admin if request.user.is_authenticated else False,
         })
+
+
+class LivenessProbeView(APIView):
+    """
+    Simple liveness probe endpoint for monitoring.
+    """
+    
+    permission_classes = [AllowAny]
+    
+    @extend_schema(
+        summary="Liveness Probe",
+        description="Simple liveness check for monitoring",
+        responses={
+            200: OpenApiResponse(description="API is live")
+        },
+        tags=["System"],
+    )
+    def get(self, request):
+        """Return liveness status."""
+        return Response({"status": "live"})
