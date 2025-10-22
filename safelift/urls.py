@@ -23,6 +23,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # Authentication endpoints
     path("api/auth/", include("apps.authentication.urls")),
+    # Dashboard endpoints
+    path("api/dashboard/", include("apps.dashboard.urls")),
     # User management endpoints
     path("api/", include("apps.users.urls")),
     # Swagger UI

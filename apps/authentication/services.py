@@ -68,7 +68,8 @@ class AuthenticationService:
             'user': {
                 'id': user.id,
                 'username': user.username,
-                'role': user.role,
+                'role': user.get_role_display(),
+                'role_code': user.role,
                 'is_admin': user.is_admin,
             },
             'tokens': {

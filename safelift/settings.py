@@ -47,6 +47,11 @@ INSTALLED_APPS = [
     # local apps
     "apps.users",
     "apps.authentication",
+    "apps.dashboard",
+    "apps.conversations",
+    "apps.escalations",
+    "apps.export_data",
+    "apps.knowledge_base",
 ]
 
 MIDDLEWARE = [
@@ -171,6 +176,9 @@ SIMPLE_JWT = {
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_TYPE_CLAIM": "token_type",
     "JTI_CLAIM": "jti",
+
+    "TOKEN_BLACKLIST_MODEL": "rest_framework_simplejwt.token_blacklist.models.BlacklistedToken",
+    "TOKEN_OUTSTANDING_MODEL": "rest_framework_simplejwt.token_blacklist.models.OutstandingToken",
 }
 
 # Spectacular Settings

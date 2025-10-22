@@ -20,10 +20,13 @@ class User(AbstractUser):
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
 
+    class Meta:
+        db_table = "users"
+
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
 
     @property
     def is_admin(self):
-        """Check if user has admin role."""
-        return self.role == self.Role.ADMIN
+        """Check if user has admin role or is superuser."""
+        return self.role == self.Role.ADMIN or self.is_superuser
