@@ -199,6 +199,22 @@ SPECTACULAR_SETTINGS = {
 # CORS configuration
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
 
+# OpenAI configuration
+OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
+
+# Pinecone configuration
+PINECONE_API_KEY = config('PINECONE_API_KEY', default='')
+PINECONE_ENVIRONMENT = config('PINECONE_ENVIRONMENT', default='us-east-1')
+PINECONE_INDEX_NAME = config('PINECONE_INDEX_NAME', default='safelift-knowledge-base')
+
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2621440  # 2.5MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2621440  # 2.5MB
+
+# Media files configuration
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Security settings for production
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
