@@ -29,6 +29,8 @@ urlpatterns = [
     path("api/", include("apps.users.urls")),
     # Knowledge base endpoints
     path("api/knowledge-base/", include("apps.knowledge_base.urls")),
+    # Conversation endpoints
+    path("api/conversations/", include("apps.conversations.urls")),
     # Swagger UI
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),

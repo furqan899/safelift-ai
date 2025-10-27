@@ -1,6 +1,6 @@
 from django.db import models
 from apps.users.models import User
-
+from .constants import PERCENTAGE_BASE, PERCENTAGE_DECIMAL_PLACES, DEFAULT_SUCCESS_RATE
 
 class ConversationHistory(models.Model):
     """
@@ -101,30 +101,97 @@ class ConversationHistory(models.Model):
     def __str__(self):
         return f"{self.session_id} - {self.created_at}"
     
-    def escalate(self, reason: str = '') -> None:
-        """Mark conversation as escalated."""
-        from django.utils import timezone
-        self.is_escalated = True
-        self.status = self.Status.ESCALATED
-        self.escalated_at = timezone.now()
-        self.escalation_reason = reason
-        self.save()
-    
-    def resolve(self) -> None:
-        """Mark conversation as resolved."""
-        from django.utils import timezone
-        self.status = self.Status.RESOLVED
-        self.resolved_at = timezone.now()
-        self.save()
+    # Note: escalate() and resolve() methods moved to ConversationActionService
+    # This follows Clean Code principles: business logic belongs in services, not models
 
 class ConversationLogs(models.Model):
     """
-    A model for the conversation logs for each session.
+    Model for tracking aggregated conversation statistics per session.
+    
+    This represents session-level metrics summarizing all conversations
+    within a specific session.
     """
-    total_conversations = models.IntegerField()
-    resolved_conversations = models.IntegerField()
-    escalated_conversations = models.IntegerField()
-    success_rate = models.FloatField()
-
+    
+    # Session Information
+    session_id = models.CharField(
+        max_length=255,
+        db_index=True,
+        unique=True,
+        help_text="Unique session identifier"
+    )
+    
+    # Aggregated Metrics
+    total_conversations = models.IntegerField(
+        default=0,
+        help_text="Total number of conversations in this session"
+    )
+    resolved_conversations = models.IntegerField(
+        default=0,
+        help_text="Number of resolved conversations in this session"
+    )
+    escalated_conversations = models.IntegerField(
+        default=0,
+        help_text="Number of escalated conversations in this session"
+    )
+    
+    # Calculated Metrics
+    success_rate = models.FloatField(
+        default=0.0,
+        help_text="Success rate percentage for this session"
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(
+        db_index=True,
+        help_text="When the session started",
+        null=True,
+        blank=True
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="Last update timestamp",
+        null=True,
+        blank=True
+    )
+    last_conversation_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the last conversation in this session"
+    )
+    
     class Meta:
+        ordering = ['-last_conversation_at', '-created_at']
+        verbose_name = "Conversation Log"
+        verbose_name_plural = "Conversation Logs"
         db_table = "conversation_logs"
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['-last_conversation_at']),
+            models.Index(fields=['session_id']),
+        ]
+    
+    def __str__(self):
+        return f"Session {self.session_id} - {self.total_conversations} conversations"
+    
+    @property
+    def calculated_success_rate(self) -> float:
+        """
+        Calculate success rate as a property.
+        
+        Returns:
+            Success rate as float (0-100)
+        """
+        if self.total_conversations == 0:
+            return DEFAULT_SUCCESS_RATE
+        
+        percentage = (self.resolved_conversations / self.total_conversations) * PERCENTAGE_BASE
+        return round(percentage, PERCENTAGE_DECIMAL_PLACES)
+    
+    def save(self, *args, **kwargs):
+        """
+        Override save to auto-calculate and store success rate.
+        
+        Calculates success rate automatically before saving.
+        """
+        self.success_rate = self.calculated_success_rate
+        super().save(*args, **kwargs)
