@@ -9,6 +9,7 @@ from .serializers import UserSerializer
 from .permissions import IsAdminUser, CanAccessUser
 
 
+@extend_schema(tags=["Users"])
 class UserListCreateView(APIView):
     """
     API view for listing and creating users (admin only).
@@ -41,10 +42,11 @@ class UserListCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(tags=["Users"])
 class UserDetailView(APIView):
     """
     API view for retrieving, updating, and deleting individual users.
-    Users can access their own data, admins can access any user data.
+    Users can access their own data; admins can access any user data.
     """
 
     def get_permissions(self):
@@ -77,7 +79,6 @@ class UserDetailView(APIView):
         """Update user completely."""
         user = get_object_or_404(User, pk=pk)
         self.check_object_permissions(request, user)
-
         serializer = UserSerializer(user, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -94,7 +95,6 @@ class UserDetailView(APIView):
         """Partially update user."""
         user = get_object_or_404(User, pk=pk)
         self.check_object_permissions(request, user)
-
         serializer = UserSerializer(user, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
