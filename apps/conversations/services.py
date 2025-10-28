@@ -11,6 +11,7 @@ from django.db.models import Q, QuerySet
 from django.utils import timezone
 
 from .models import ConversationHistory, ConversationLogs
+from apps.escalations.services import EscalationService
 from .constants import (
     PERCENTAGE_BASE,
     DEFAULT_SUCCESS_RATE,
@@ -223,7 +224,10 @@ class ConversationActionService:
             conversation.escalated_at = timezone.now()
             conversation.escalation_reason = reason
             conversation.save()
-            
+
+            # Ensure an Escalation record exists for escalations screens
+            EscalationService.create_from_conversation(conversation)
+
             logger.info(LOG_CONVERSATION_ESCALATED.format(
                 id=conversation.id,
                 reason=reason
