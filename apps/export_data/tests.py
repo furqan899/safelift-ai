@@ -26,9 +26,9 @@ class ExportServiceTestCase(TestCase):
     def setUp(self):
         """Set up test data."""
         self.user = User.objects.create_user(
-            email="test@example.com",
+            username="testuser",
             password="testpass123",
-            full_name="Test User",
+            role=User.Role.USER,
         )
 
     def test_create_export_success(self):
@@ -192,15 +192,14 @@ class ExportViewSetTestCase(APITestCase):
         """Set up test data."""
         self.client = APIClient()
         self.user = User.objects.create_user(
-            email="test@example.com",
+            username="testuser",
             password="testpass123",
-            full_name="Test User",
+            role=User.Role.USER,
         )
         self.admin_user = User.objects.create_user(
-            email="admin@example.com",
+            username="admin",
             password="adminpass123",
-            full_name="Admin User",
-            is_admin=True,
+            role=User.Role.ADMIN,
         )
         self.client.force_authenticate(user=self.user)
 
@@ -229,7 +228,7 @@ class ExportViewSetTestCase(APITestCase):
             "include_personal_data": False,
         }
 
-        response = self.client.post("/api/export-data/exports/", data)
+        response = self.client.post("/api/export-data/exports/", data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["status"], "pending")
@@ -242,7 +241,7 @@ class ExportViewSetTestCase(APITestCase):
             "date_range_days": 30,
         }
 
-        response = self.client.post("/api/export-data/exports/", data)
+        response = self.client.post("/api/export-data/exports/", data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -254,7 +253,7 @@ class ExportViewSetTestCase(APITestCase):
             "date_range_days": 500,
         }
 
-        response = self.client.post("/api/export-data/exports/", data)
+        response = self.client.post("/api/export-data/exports/", data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -333,7 +332,7 @@ class ExportViewSetTestCase(APITestCase):
     def test_admin_sees_all_exports(self):
         """Test that admin sees all exports."""
         other_user = User.objects.create_user(
-            email="other@example.com",
+            username="other",
             password="otherpass123",
         )
         Export.objects.create(created_by=self.user, status=Export.Status.COMPLETED)
@@ -348,7 +347,7 @@ class ExportViewSetTestCase(APITestCase):
     def test_user_sees_only_own_exports(self):
         """Test that regular user sees only their own exports."""
         other_user = User.objects.create_user(
-            email="other@example.com",
+            username="other",
             password="otherpass123",
         )
         Export.objects.create(created_by=self.user, status=Export.Status.COMPLETED)
@@ -358,4 +357,5 @@ class ExportViewSetTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
-        self.assertEqual(response.data["results"][0]["created_by_name"], "Test User")
+        # created_by_name uses username in this project
+        self.assertEqual(response.data["results"][0]["created_by_name"], "testuser")

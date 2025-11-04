@@ -6,7 +6,7 @@ class ExportListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for export list view."""
 
     created_by_name = serializers.CharField(
-        source="created_by.full_name",
+        source="created_by.username",
         read_only=True,
     )
     data_types_display = serializers.SerializerMethodField()
@@ -48,7 +48,7 @@ class ExportDetailSerializer(serializers.ModelSerializer):
     """Full serializer for export detail view."""
 
     created_by_name = serializers.CharField(
-        source="created_by.full_name",
+        source="created_by.username",
         read_only=True,
     )
     data_types_display = serializers.SerializerMethodField()

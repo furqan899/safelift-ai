@@ -106,8 +106,13 @@ class ExportViewSet(
         serializer.is_valid(raise_exception=True)
 
         try:
+            data = serializer.validated_data
             export = ExportService.create_export(
-                user=request.user, **serializer.validated_data
+                user=request.user,
+                data_types=data.get('data_types', []),
+                format=data.get('format'),
+                date_range_days=data.get('date_range_days'),
+                include_personal_data=data.get('include_personal_data', False),
             )
             logger.info("Export %d created successfully", export.id)
             return Response(
@@ -160,7 +165,7 @@ class ExportViewSet(
                 ExportDetailSerializer(export).data, status=status.HTTP_200_OK
             )
         except ExportRetryError as e:
-            logger.warning("Cannot retry export %d: %s", pk, str(e))
+            logger.warning("Cannot retry export %s: %s", pk, str(e))
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.error("Error retrying export %d: %s", pk, str(e), exc_info=True)
@@ -189,7 +194,7 @@ class ExportViewSet(
             logger.info("Download info retrieved for export %d", export.id)
             return Response(download_info, status=status.HTTP_200_OK)
         except ExportDownloadError as e:
-            logger.warning("Cannot download export %d: %s", pk, str(e))
+            logger.warning("Cannot download export %s: %s", pk, str(e))
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.error(
