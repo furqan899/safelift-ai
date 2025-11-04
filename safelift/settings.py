@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "apps.escalations",
     "apps.export_data",
     "apps.knowledge_base",
+    "apps.system_settings",
 ]
 
 MIDDLEWARE = [
@@ -88,10 +89,16 @@ WSGI_APPLICATION = "safelift.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Force PostgreSQL for all environments. Configure via environment variables.
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": config('DB_NAME', default='safelift'),
+        "USER": config('DB_USER', default='postgres'),
+        "PASSWORD": config('DB_PASSWORD', default=''),
+        "HOST": config('DB_HOST', default='127.0.0.1'),
+        "PORT": config('DB_PORT', default='5432'),
+        "CONN_MAX_AGE": config('DB_CONN_MAX_AGE', default=600, cast=int),
     }
 }
 

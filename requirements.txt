@@ -8,6 +8,7 @@ PyJWT==2.10.1
 sqlparse==0.5.3
 tzdata==2025.2
 python-decouple
+psycopg2-binary==2.9.9
 
 # File handling and storage
 django-storages==1.14.2
