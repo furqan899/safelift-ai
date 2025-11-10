@@ -29,3 +29,6 @@ apps/conversations/migrations/
 apps/escalations/migrations/
 apps/export_data/migrations/
 apps/knowledge_base/migrations/
+
+# Add all .md files
+*.md
