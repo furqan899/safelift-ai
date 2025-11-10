@@ -27,23 +27,25 @@ class IsOwnerOrAdmin(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         """Check if user is owner or admin."""
-        # Check if user is admin
         if request.user.is_admin:
             return True
-
-        # For User objects, check if it's the same user
         if isinstance(obj, User):
             return obj == request.user
-
-        # Check ownership - try common fields
-        owner_fields = ['user', 'owner', 'created_by', 'user_id', 'owner_id']
-        for field in owner_fields:
+        # Preferred explicit fields
+        for field in ("created_by", "owner", "user"):
             if hasattr(obj, field):
                 owner = getattr(obj, field)
                 if isinstance(owner, User):
                     return owner == request.user
-                elif owner == request.user.id:
+                if owner == request.user.id:
                     return True
+        return False
 
-        # Fallback to direct id comparison (for User objects)
-        return hasattr(obj, 'id') and obj.id == request.user.id
+
+class IsAdminUser(permissions.IsAuthenticated):
+    """Authenticated and admin users only."""
+
+    message = 'Only administrators can access this resource'
+
+    def has_permission(self, request, view):
+        return super().has_permission(request, view) and getattr(request.user, "is_admin", False)

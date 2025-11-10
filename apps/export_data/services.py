@@ -45,9 +45,14 @@ class ExportService:
         """
         Create a new export job with validation.
         """
-        if date_range_days < MIN_DATE_RANGE_DAYS or date_range_days > MAX_DATE_RANGE_DAYS:
-            raise ExportCreationError.invalid_date_range(MIN_DATE_RANGE_DAYS, MAX_DATE_RANGE_DAYS)
-        
+        if (
+            date_range_days < MIN_DATE_RANGE_DAYS
+            or date_range_days > MAX_DATE_RANGE_DAYS
+        ):
+            raise ExportCreationError.invalid_date_range(
+                MIN_DATE_RANGE_DAYS, MAX_DATE_RANGE_DAYS
+            )
+
         try:
             export = Export.objects.create(
                 created_by=user,
@@ -88,7 +93,9 @@ class ExportService:
             exporter = get_exporter(export.format, context)
             file_path, file_size = exporter.export()
 
-            export = ExportService.mark_completed(export, file_path=file_path, file_size=file_size)
+            export = ExportService.mark_completed(
+                export, file_path=file_path, file_size=file_size
+            )
             logger.info("Export %d successfully completed", export.id)
             return export
         except Exception as exc:
@@ -107,7 +114,9 @@ class ExportService:
         export.error_message = ""
         export.save()
 
-        logger.info("Export %d retry initiated by %s", export.id, export.created_by.email)
+        logger.info(
+            "Export %d retry initiated by %s", export.id, export.created_by.email
+        )
         return export
 
     @staticmethod
@@ -142,7 +151,12 @@ class ExportService:
         export.completed_at = timezone.now()
         export.save()
 
-        logger.info("Export %d completed. File: %s, Size: %d bytes", export.id, file_path, file_size)
+        logger.info(
+            "Export %d completed. File: %s, Size: %d bytes",
+            export.id,
+            file_path,
+            file_size,
+        )
         return export
 
     @staticmethod
@@ -165,7 +179,7 @@ class ExportService:
             raise ExportDownloadError.file_missing(export.id)
 
         return {
-            "download_url": f"/media/{export.file_path}",
+            "export_id": export.id,
             "file_size": export.file_size,
             "format": export.format,
             "created_at": export.created_at.isoformat(),
@@ -187,10 +201,7 @@ class ExportService:
     @staticmethod
     def get_user_export_history(user: User, limit: int = 10) -> QuerySet:
         """Get recent exports for a user."""
-        return (
-            Export.objects.filter(created_by=user)
-            .order_by("-created_at")[:limit]
-        )
+        return Export.objects.filter(created_by=user).order_by("-created_at")[:limit]
 
     @staticmethod
     def get_export_stats() -> Dict[str, Any]:

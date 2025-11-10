@@ -8,6 +8,7 @@ Following Clean Code principles: Single Responsibility, clear documentation.
 import logging
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from apps.authentication.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema, OpenApiResponse
@@ -36,7 +37,7 @@ class DashboardOverviewView(APIView):
     - Quick actions
     """
     
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
     
     @extend_schema(
         summary="Get Dashboard Overview",
@@ -62,16 +63,6 @@ class DashboardOverviewView(APIView):
             HTTP 403: If user is not an administrator
             HTTP 500: If dashboard data retrieval fails
         """
-        # Ensure only admins can access dashboard
-        if not self._is_admin_user(request.user):
-            logger.warning(
-                f"Unauthorized dashboard access attempt by user: {request.user.username}"
-            )
-            return Response(
-                {'error': 'Only administrators can access the dashboard'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
         try:
             logger.info(f"Fetching dashboard data for admin: {request.user.username}")
             dashboard_data = self._build_dashboard_data()
@@ -116,16 +107,7 @@ class DashboardOverviewView(APIView):
     
     @staticmethod
     def _is_admin_user(user) -> bool:
-        """
-        Check if user has admin privileges.
-        
-        Args:
-            user: User instance
-            
-        Returns:
-            Boolean indicating admin status
-        """
-        return user.is_authenticated and user.is_admin
+        return getattr(user, "is_admin", False)
 
 
 class LanguageDistributionView(APIView):
@@ -135,7 +117,7 @@ class LanguageDistributionView(APIView):
     Provides detailed language usage statistics over a specified period.
     """
     
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
     
     @extend_schema(
         summary="Get Language Distribution",
@@ -160,15 +142,6 @@ class LanguageDistributionView(APIView):
         Returns:
             Response: Language distribution data
         """
-        if not request.user.is_admin:
-            logger.warning(
-                f"Non-admin access attempt to language distribution by: {request.user.username}"
-            )
-            return Response(
-                {'error': 'Admin access required'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
         try:
             days = int(request.query_params.get('days', 30))
             
@@ -206,7 +179,7 @@ class QuickActionsView(APIView):
     Returns available quick actions for the dashboard.
     """
     
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
     
     @extend_schema(
         summary="Get Quick Actions",
@@ -239,7 +212,7 @@ class HealthStatusView(APIView):
     Provides system health information and status indicators.
     """
     
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
     
     @extend_schema(
         summary="Get System Health Status",

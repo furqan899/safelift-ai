@@ -10,6 +10,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
+from django.conf import settings
+from django.http import FileResponse
+import os
 
 from .models import Export
 from .serializers import (
@@ -72,6 +75,33 @@ class ExportViewSet(
             qs = qs.filter(format=format_param)
 
         return qs
+
+    @extend_schema(
+        summary="Download Export",
+        description="Securely download a completed export file",
+        tags=["Export Data"],
+    )
+    @action(detail=True, methods=["get"], url_path="download")
+    def download(self, request, pk=None):
+        export = self.get_object()
+
+        # Ownership/admin check
+        if not (request.user.is_admin or export.created_by_id == request.user.id):
+            return Response({"error": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Status check
+        if export.status != export.Status.COMPLETED or not export.file_path:
+            return Response({"error": "Export not ready"}, status=status.HTTP_400_BAD_REQUEST)
+
+        file_abspath = os.path.join(str(settings.MEDIA_ROOT), export.file_path)
+        if not os.path.isfile(file_abspath):
+            return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        response = FileResponse(open(file_abspath, "rb"), as_attachment=True)
+        # Suggest a filename
+        filename = f"export-{export.id}.{export.format}"
+        response["Content-Disposition"] = f"attachment; filename=\"{filename}\""
+        return response
 
     @extend_schema(
         summary="List Exports",
