@@ -11,8 +11,8 @@ class SystemSettings(models.Model):
     """
 
     class Language(models.TextChoices):
-        ENGLISH = 'en', 'English'
-        SWEDISH = 'sv', 'Swedish'
+        ENGLISH = "en", "English"
+        SWEDISH = "sv", "Swedish"
 
     # Language & Localization
     auto_detect_language = models.BooleanField(default=True)
@@ -23,16 +23,17 @@ class SystemSettings(models.Model):
     )
 
     # Notifications
-    notification_email = models.EmailField(blank=True, default='')
+    email_notifications_enabled = models.BooleanField(
+        default=True, help_text="Enable or disable email notifications"
+    )
+    notification_email = models.EmailField(blank=True, default="")
     escalation_threshold = models.PositiveSmallIntegerField(default=3)
 
     # Branding & Appearance
     widget_title = models.CharField(
-        max_length=120,
-        blank=True,
-        default='Safelift AI Assistant'
+        max_length=120, blank=True, default="Safelift AI Assistant"
     )
-    welcome_message = models.TextField(blank=True, default='')
+    welcome_message = models.TextField(blank=True, default="")
 
     # Audit
     updated_by = models.ForeignKey(
@@ -40,13 +41,13 @@ class SystemSettings(models.Model):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name='updated_system_settings'
+        related_name="updated_system_settings",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'system_settings'
+        db_table = "system_settings"
 
     def save(self, *args, **kwargs):
         """Ensure only one instance exists (enforce singleton)."""
@@ -54,12 +55,10 @@ class SystemSettings(models.Model):
         super().save(*args, **kwargs)
 
     @classmethod
-    def get_solo(cls) -> 'SystemSettings':
+    def get_solo(cls) -> "SystemSettings":
         """Return the single settings instance, creating with defaults if missing."""
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
 
     def __str__(self) -> str:
-        return 'System Settings'
-
-
+        return "System Settings"

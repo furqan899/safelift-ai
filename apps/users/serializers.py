@@ -7,37 +7,47 @@ class UserSerializer(serializers.ModelSerializer):
     """
     Serializer for user operations with enhanced validation.
     """
+
     password = serializers.CharField(
         write_only=True,
         required=False,
         min_length=8,
-        style={'input_type': 'password'},
-        help_text="Password must be at least 8 characters long"
+        style={"input_type": "password"},
+        help_text="Password must be at least 8 characters long",
     )
     password_confirm = serializers.CharField(
         write_only=True,
         required=False,
-        style={'input_type': 'password'},
-        help_text="Confirm password (required when setting password)"
+        style={"input_type": "password"},
+        help_text="Confirm password (required when setting password)",
     )
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'password', 'password_confirm', 'role', 'is_active']
-        read_only_fields = ['id']
+        fields = [
+            "id",
+            "username",
+            "email",
+            "password",
+            "password_confirm",
+            "role",
+            "is_active",
+            "last_login",
+            "date_joined",
+        ]
+        read_only_fields = ["id", "last_login", "date_joined"]
         extra_kwargs = {
-            'username': {
-                'required': True,
-                'help_text': 'Unique username for the user'
+            "username": {"required": True, "help_text": "Unique username for the user"},
+            "email": {
+                "required": False,
+                "allow_blank": True,
+                "help_text": "Email address for the user",
             },
-            'role': {
-                'required': False,
-                'help_text': 'User role (USER or ADMIN)'
+            "role": {"required": False, "help_text": "User role (USER or ADMIN)"},
+            "is_active": {
+                "required": False,
+                "help_text": "Whether the user account is active",
             },
-            'is_active': {
-                'required': False,
-                'help_text': 'Whether the user account is active'
-            }
         }
 
     def validate_username(self, value):
@@ -48,13 +58,27 @@ class UserSerializer(serializers.ModelSerializer):
             queryset = queryset.exclude(pk=self.instance.pk)
 
         if queryset.exists():
-            raise serializers.ValidationError("A user with this username already exists.")
+            raise serializers.ValidationError(
+                "A user with this username already exists."
+            )
+        return value
+
+    def validate_email(self, value):
+        """Validate email format if provided."""
+        if value:
+            from django.core.validators import validate_email
+            from django.core.exceptions import ValidationError
+
+            try:
+                validate_email(value)
+            except ValidationError:
+                raise serializers.ValidationError("Enter a valid email address.")
         return value
 
     def validate(self, attrs):
         """Validate password confirmation and admin role restrictions."""
-        password = attrs.get('password')
-        password_confirm = attrs.get('password_confirm')
+        password = attrs.get("password")
+        password_confirm = attrs.get("password_confirm")
 
         # Check if this is a creation (no instance) or update
         is_creation = self.instance is None
@@ -62,31 +86,35 @@ class UserSerializer(serializers.ModelSerializer):
         # Check password confirmation for creation
         if is_creation and password:  # Creating new user
             if not password_confirm:
-                raise serializers.ValidationError({
-                    'password_confirm': 'Password confirmation is required when setting a password.'
-                })
+                raise serializers.ValidationError(
+                    {
+                        "password_confirm": "Password confirmation is required when setting a password."
+                    }
+                )
             if password != password_confirm:
-                raise serializers.ValidationError({
-                    'password': 'Passwords do not match.',
-                    'password_confirm': 'Passwords do not match.'
-                })
+                raise serializers.ValidationError(
+                    {
+                        "password": "Passwords do not match.",
+                        "password_confirm": "Passwords do not match.",
+                    }
+                )
 
         # Check role restrictions
-        role = attrs.get('role')
+        role = attrs.get("role")
         if is_creation and role and role == User.Role.ADMIN:
             # Check if current user is admin (for creation)
-            request = self.context.get('request')
+            request = self.context.get("request")
             if request and not request.user.is_admin:
-                raise serializers.ValidationError({
-                    'role': 'Only administrators can create admin users.'
-                })
+                raise serializers.ValidationError(
+                    {"role": "Only administrators can create admin users."}
+                )
 
         return attrs
 
     def create(self, validated_data):
         """Create new user with encrypted password."""
-        validated_data.pop('password_confirm', None)  # Remove confirmation field
-        password = validated_data.pop('password', None)
+        validated_data.pop("password_confirm", None)  # Remove confirmation field
+        password = validated_data.pop("password", None)
 
         user = User(**validated_data)
         if password:
@@ -102,8 +130,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Update user with proper field handling."""
-        validated_data.pop('password_confirm', None)  # Remove confirmation field
-        password = validated_data.pop('password', None)
+        validated_data.pop("password_confirm", None)  # Remove confirmation field
+        password = validated_data.pop("password", None)
 
         # Update regular fields
         for attr, value in validated_data.items():
